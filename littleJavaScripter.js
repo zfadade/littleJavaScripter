@@ -6,7 +6,6 @@
 
 
 // Produce a printable presentation of an s-expression
-
 function p(x) {
     var r;
     if (isList(x)) {
@@ -67,7 +66,6 @@ var s = function (x) {
 
 
 // Produce an object using another object as its prototype.
-
 Object.prototype.begetObject = function () {
     var F = function () {};
     F.prototype = this;
@@ -83,18 +81,29 @@ function add1(n) {
     return +n + 1;
 }
 
+// The Law of Car: car is defined only for non-empty lists
 function car(s) {
     return s[0];
 }
 
+/* Pronounced "could-er"
+The Law of Cdr:  cdr is defined only for non-empty lists.
+The cdr of any non-empty list is always another list
+*/
 function cdr(s) {
     return s[1];
 }
 
+/* "cons 'a' onto the list 'd'".
+// Adds any S-expression the front of a list.
+The Law of Cons:  cons takes two args.  The 2nd arg must be a list.  
+The result is a list.
+*/
 function cons(a, d) {
     return [a, d];
 }
 
+// Note:  list() is not an atom
 function isAtom(a) {
     return typeof a === 'string' || typeof a === 'number' ||
         typeof a === 'boolean';
@@ -104,6 +113,7 @@ function isBoolean(a) {
     return typeof a === 'boolean';
 }
 
+// The Law of Eq:  both args musts be non-numeric atoms
 function isEq(s, t) {
     return s === t;
 }
@@ -116,16 +126,19 @@ function isList(a) {
     return a && typeof a === 'object' && a.constructor === Array;
 }
 
+/*  isFinite() builit-in function determines whether a number is a finite, legal number.
+Returns false if the value is +infinity, -infinity, or NaN (Not-a-Number).
+*/
 function isNumber(a) {
     return isFinite(a);
 }
 
+// The Law of Nul:  isNull() is defined only for lists (and objects)?
 function isNull(a) {
     return typeof a === 'undefined' || (typeof a === 'object' && !a);
 }
 
-function isUndefined(a) {
-    return typeof a === 'undefined';
+function isUndefined(a) {  return typeof a === 'undefined';
 }
 
 function isZero(s) {
@@ -139,6 +152,8 @@ function sub1(n) {
 
 // Chapter Two
 
+// is listOfAtoms
+// if isNull(s) is true, then s does not contain a list, so isLat == true
 function isLat(s) {
     return isNull(s) || (isAtom(car(s)) && isLat(cdr(s)));
 }
@@ -148,25 +163,38 @@ function isMember(a, lat) {
             isEq(a, car(lat)) || isMember(a, cdr(lat));
 }
 
-// Chapter Three
+// Chapter Three:  Cons the Magnificent
 
+// Remove the first occurrence of atom 'a' from list 'lat'
 function rember(a, lat) {
     return isNull(lat) ? null :
             isEq(a, car(lat)) ? cdr(lat) :
             cons(car(lat), rember(a, cdr(lat)));
 }
 
+/*
+Builds a list composed of the first S-expression of each internal list.
+'l' is a list that is either null, or contains only non-empty lists.
+"We can only look at one S-expression at a time. To look at the rest, we must recur."
+Third Commandment:  "When building a list, describe the first typical element, 
+and then cons it onto the natural recursion"
+  car(car l)):  typical element
+  firsts(cdr(l))):  natural recursion
+*/
 function firsts(l) {
     return isNull(l) ? null :
             cons(car(car(l)), firsts(cdr(l)));
 }
 
+// Inserts 'neo' to the RIGHT of 'old' in list 'lat'
 function insertR(neo, old, lat) {
     return isNull(lat) ? null :
             cons(car(lat), isEq(car(lat), old) ? cons(neo, cdr(lat)) :
                 insertR(neo, old, cdr(lat)));
 }
 
+
+// Inserts 'neo' to the LEFT of 'old' in list 'lat'
 function insertL(neo, old, lat) {
     return isNull(lat) ? null :
             isEq(car(lat), old) ? cons(neo, lat) :
@@ -199,6 +227,7 @@ function multiinsertR(neo, old, lat) {
             multiinsertR(old, neo, cdr(lat));
 }
 
+
 function multiinsertL(neo, old, lat) {
     return isNull(lat) ? null :
             isEq(old, car(lat)) ?
@@ -222,14 +251,19 @@ function minus(n, m) {
     return isZero(m) ? n : sub1(minus(n, sub1(m)));
 }
 
+/*
+Tup: either an empty list, or contains a number and a rest that is also a tup.
+*/
 function addtup(tup) {
     return isNull(tup) ? 0 : plus(car(tup), addtup(cdr(tup)));
 }
 
+// Multiplies n * m
 function star(n, m) {
     return isZero(m) ? 0 : plus(n, star(n, sub1(m)));
 }
 
+// TODO:  This throws "Maximum call stack size".  WHY ?
 function tupplus(tup1, tup2) {
     return isNull(tup1) ? tup2 :
             isNull(tup2) ? tup1 :
@@ -257,6 +291,7 @@ function power(n, m) {
             star(n, power(n, sub1(m)));
 }
 
+// Counts how many time 'm' fits into 'n'
 function quotient(n, m) {
     return lt(n, m) ? 0 :
             add1(quotient(minus(n, m), m));
@@ -272,9 +307,22 @@ function pick(n, lat) {
             pick(sub1(n), cdr(lat));
 }
 
+// TODO:  I think my mine is better !
+function my_pick(n, lat) {
+    return isZero(n) || isNull(lat) ? null :
+        isEq(1, n) ? car(lat) : pick(sub1(n), cdr(lat));
+}
+
 function rempick(n, lat) {
     return isZero(sub1(n)) ? cdr(lat) :
             cons(car(lat), rempick(sub1(n), cdr(lat)));
+}
+
+// TODO:  Compare our implementations
+function my_rempick(n, lat) {
+    return isZero(n) || isNull(lat) ? null :
+                isEq(1, n) ? cdr(lat) : 
+                    cons(car(lat), my_rempick(sub1(n), cdr(lat)));
 }
 
 function noNums(lat) {
@@ -283,22 +331,33 @@ function noNums(lat) {
             cons(car(lat), noNums(cdr(lat)));
 }
 
+ // Extracts a tup from a lat using all the numbers in the lat.
 function allNums(lat) {
     return isNull(lat) ? null :
             isNumber(car(lat)) ? cons(car(lat), allNums(cdr(lat))) :
             allNums(cdr(lat));
 }
 
+// true if its two arguments (a1 and a2) are the same atom. 
+//  Remember to use isEqn() for numbers and isEq() for all other atoms
 function isEqan(a1, a2) {
     return isNumber(a1) && isNumber(a2) ? isEqn(a1, a2) :
             isNumber(a1) || isNumber(a2) ? false :
             isEq(a1, a2);
 }
 
+// number of times an atom a appears in a lat
 function occur(a, lat) {
     return isNull(lat) ? 0 :
             isEq(car(lat), a) ? add1(occur(a, cdr(lat))) :
             occur(a, cdr(lat));
+}
+
+// I used isEqan() and they used isEq().   Isn't mine more universal?  Works for numbers?
+function my_occur(a, lat) {
+    return isNull(lat) ? 0 :
+        isEqan(car(lat), a) ? add1(my_occur(a, cdr(lat))) :
+            my_occur(a, cdr(lat));
 }
 
 function isOne(n) {
@@ -310,7 +369,7 @@ function rempick(n, lat) {
             cons(car(lat), rempick(sub1(n), cdr(lat)));
 }
 
-// Chapter Five
+// Chapter Five:  *Oh My Gawd*: It's Full of Stars
 
 function remberstar(a, l) {
     return isNull(l) ? null :
@@ -329,6 +388,7 @@ function insertRstar(neo, old, l) {
             cons(insertRstar(neo, old, car(l)), insertRstar(neo, old, cdr(l)));
 }
 
+
 function occurstar(a, l) {
     return isNull(l) ? 0 :
             isAtom(car(l)) ?
@@ -337,6 +397,18 @@ function occurstar(a, l) {
             plus(occurstar(a, car(l)), occurstar(a, cdr(l)));
 }
 
+// mine: I like it better.  Theirs is missing args to occrurstar
+function occurStar(a, l) {
+    return isNull(l) ? 0 :
+            isAtom(car(l)) ? 
+                isEqan(a, car(l)) ? add1(occurStar(a, cdr(l))) :
+                    occurStar(a, cdr(l)):
+            plus(occurStar(a, car(l)), occurStar(a, cdr(l))); 
+}
+
+
+
+// TODO?  is this right   calls insertRstar ?
 function subststar(neo, old, l) {
     return isNull(l) ? null :
             cons(
@@ -344,6 +416,16 @@ function subststar(neo, old, l) {
                     insertRstar(neo, old, car(l)),
                 subststar(neo, old, cdr(l)));
 }
+
+// Mine
+function my_subststar(neo, old, l) {
+    return isNull(l) ? null :
+                isAtom(old, car(l)) ? 
+                    cons(neo, my_subststar(neo, old, cdr(l))) :
+                    cons(car(l), my_subststar(neo, old, cdr(l))) :
+                cons(my_subststar(neo, old, car(l)), subststar(neo, old, cdr(l)));
+}
+
 
 function insertLstar(neo, old, l) {
     return isNull(l) ? null :
@@ -354,17 +436,38 @@ function insertLstar(neo, old, l) {
             cons(insertLstar(neo, old, car(l)), insertLstar(neo, old, cdr(l)));
 }
 
+// mine:
+function insertLStar(neo,old, l) {
+    return isNull(lat) ? null :
+            isAtom(car(l)) ?
+                    isEq(old, car(l)) ? cons(neo), cons(old, insertLStar(neo, old, cdr(l)))) :
+                                        cons(car(l), insertLStar(neo, old, cdr(l))) :
+            cons(insertLStar(neo, old, car(l)), insertLStar(neo, old, cdr(l)));     
+}
+
+// HELP !
 function memberstar(a, l) {
     return isNull(l) ? false :
             (isAtom(l) ? isEq(car(l), a) : memberstar(a, car(l))) ||
                 memberstar(a, cdr(l));
 }
 
+// mine:
+function memberStar(a, l) {
+    return isNull(l) ? false :
+            (isAtom(car(l))? isEqan(a, car(l)) : memberStar(a, car(l)) || 
+                memberStar(a. cdr(l)));
+}
+
+// finds the leftmost atom in a non-empty list of S-expressions 
+//  that does not contain the empty list.
+// If there is an empty list then the function has no answer.
 function leftmost(l) {
     return isAtom(car(l)) ? car(l) :
             leftmost(car(l));
 }
 
+// REDO !!!!!!
 function isEqlist(l1, l2) {
     return isNull(l1) && isNull(l2) ? true :
             isNull(l1) || isNull(l2) ? false :
@@ -380,20 +483,22 @@ function isEqual(s1, s2) {
             isEqlist(s1, s2);
 }
 
+// WHAT IS THIS?
 function isEqlist(l1, l2) {
     return isNull(l1) && isNull(l2) ? true :
             isNull(l1) || isNull(l2) ? false :
             isEqual(car(l1), car(l2)) && isEqual(cdr(l1), cdr(l2));
 }
 
-
+// remove member
 function rember(s, l) {
     return isNull(l) ? null :
             isEqual(car(l), s) ? cdr(l) :
             cons(car(l), rember(s, cdr(l)));
 }
 
-// Chapter Six
+// Chapter Six:  Shadows
+// SKIPPED THIS CHAPTER
 
 var operator = car;
 
@@ -405,7 +510,7 @@ function secondSubExp(aexp) {
     return car(cdr(cdr(aexp)));
 }
 
-// Chapter Seven
+// Chapter Seven:  Friends and Relations
 
 function isSet(lat) {
     return isNull(lat) ? true :
@@ -416,6 +521,13 @@ function isSet(lat) {
 function makeset(lat) {
     return isNull(lat) ? null :
             cons(car(lat), makeset(multirember(car(lat), cdr(lat))));
+}
+
+// mine, w/o multirember:
+function makeSet(lat) {
+    return isNull(lat) ? () :
+            isMember(car(lat), cdr(lat)) ?  makeSet(cdr(lat)) :
+            makeSet(cons(car(lat), makeSet(cdr(lat))));
 }
 
 function isSubset(set1, set2) {
@@ -432,6 +544,7 @@ function isIntersect(set1, set2) {
             isMember(car(set1), set2) || isIntersect(cdr(set1), set2);
 }
 
+// Returns the intersection of the two sets
 function intersect(set1, set2) {
     return isNull(set1) ? null :
             isMember(car(set1), set2) ?
@@ -445,12 +558,14 @@ function union(set1, set2) {
             cons(car(set1), union(cdr(set1), set2));
 }
 
+// Returns all atoms in set1 that are not in set2
 function difference(set1, set2) {
     return isNull(set1) ? null :
             isMember(car(set1), set2) ? difference(cdr(set1), set2) :
             cons(car(set1), difference(cdr(set1), set2));
 }
 
+// HELP! don't understand !
 function intersectall(lset) {
     return isNull(lset) ? car(lset) :
             intersect(car(lset), intersectall(cdr(lset)));
@@ -474,10 +589,14 @@ function third(l) {
     return car(cdr(cdr(l)));
 }
 
+// Finite function:  a list of pairs in which no first element of any pair
+// is the same as any other first element
+// HELP !
 function isFun(rel) {
     return isSet(firsts(rel));
 }
 
+// Reverses the two atoms in each pair
 function revrel(rel) {
     return isNull(rel) ? null :
             cons(build(second(car(rel)), first(car(rel))), revrel(cdr(rel)));
@@ -505,8 +624,9 @@ function isOneToOne(fun) {
     return isFun(revrel(fun));
 }
 
-// Chapter Eight
+// Chapter Eight:  Lambda the Ultimate
 
+// // rember, but with equality function passed in
 function remberF(test, a, l) {
     return isNull(l) ? null :
             test(car(l), a) ? cdr(l) :
